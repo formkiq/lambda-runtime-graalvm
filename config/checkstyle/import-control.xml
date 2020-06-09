@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!DOCTYPE import-control PUBLIC
+    "-//Puppy Crawl//DTD Import Control 1.1//EN"
+    "http://www.puppycrawl.com/dtds/import_control_1_1.dtd">
+
+<import-control pkg="com.formkiq.lambda.runtime">
+	
+	<subpackage name="graalvm">
+	
+		<allow pkg="com.amazonaws.services.lambda.runtime" />
+		<allow pkg="com.google.gson" />
+		<allow pkg="com.sun.net.httpserver" />
+		
+		<allow pkg="java.io" />
+		<allow pkg="java.lang.reflect" />
+		<allow pkg="java.net" />
+		<allow pkg="java.nio" />
+		<allow pkg="java.text" />
+		<allow pkg="java.util" />
+		
+		
+	</subpackage>
+	
+</import-control>
