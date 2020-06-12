@@ -2,17 +2,19 @@
  * Copyright [2020] FormKiQ Inc. Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You may obtain a copy of the License
  * at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.formkiq.lambda.runtime.graalvm;
 
 import static org.junit.Assert.assertEquals;
+
+import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,12 +22,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.sun.net.httpserver.HttpServer;
 
-/**
- * Unit tests for {@link LambdaRuntime}.
- *
- */
+/** Unit tests for {@link LambdaRuntime}. */
 public class LambdaRuntimeTest {
 
   /** Lambda Request Id. */
@@ -42,9 +40,7 @@ public class LambdaRuntimeTest {
   /** {@link InvocationNextHandler}. */
   private static InvocationNextHandler invocationNextHandler = new InvocationNextHandler();
 
-  /**
-   * afterclass.
-   */
+  /** afterclass. */
   @AfterClass
   public static void afterClass() {
     server.stop(0);
@@ -52,7 +48,7 @@ public class LambdaRuntimeTest {
 
   /**
    * before class.
-   * 
+   *
    * @throws Exception Exception
    */
   @BeforeClass
@@ -61,8 +57,8 @@ public class LambdaRuntimeTest {
     server = HttpServer.create(new InetSocketAddress(SERVER_HOST, SERVER_PORT), 0);
 
     server.createContext("/2018-06-01/runtime/invocation/next", invocationNextHandler);
-    server.createContext("/2018-06-01/runtime/invocation/" + REQUEST_ID + "/response",
-        invocationResponseHandler);
+    server.createContext(
+        "/2018-06-01/runtime/invocation/" + REQUEST_ID + "/response", invocationResponseHandler);
     server.createContext("/2018-06-01/runtime/init/error", invocationResponseHandler);
 
     server.start();
@@ -70,7 +66,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Create Lambda Environment.
-   * 
+   *
    * @param handler {@link String}
    * @return {@link Map}
    */
@@ -82,9 +78,7 @@ public class LambdaRuntimeTest {
     return env;
   }
 
-  /**
-   * before.
-   */
+  /** before. */
   @Before
   public void before() {
     invocationNextHandler.setResponseContent("test");
@@ -92,7 +86,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test Main invoke lambda.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -109,7 +103,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test Invoke with Invalid _HANDLER.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -128,7 +122,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test Lambda throwing exception.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -147,7 +141,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test invoke Lambda with {@link TestRequestInputMapVoidHandler}.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -166,7 +160,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test invoke Lambda with {@link TestRequestInputStringStringHandler}.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -184,7 +178,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test invoke Lambda with {@link TestRequestInputStringIntHandler}.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -202,7 +196,7 @@ public class LambdaRuntimeTest {
 
   /**
    * Test invoke Lambda with {@link TestRequestInputStringMapHandler}.
-   * 
+   *
    * @throws Exception Exception
    */
   @Test
@@ -215,6 +209,45 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "{\"test\":\"123\"}";
+    assertEquals(expected, invocationResponseHandler.getResponse());
+  }
+
+  /**
+   * Test invoke Lambda with {@link TestRequestInputStringStringHandler}.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testInvoke08() throws Exception {
+    // given
+    String clazz =
+        "com.formkiq.lambda.runtime.graalvm.TestRequestInputStringStringHandler::handleRequest";
+    Map<String, String> env = createEnv(clazz);
+
+    // when
+    LambdaRuntime.invoke(env);
+
+    // then
+    String expected = "this is a test string";
+    assertEquals(expected, invocationResponseHandler.getResponse());
+  }
+
+  /**
+   * Test invoke Lambda with {@link TestRequestInputStringStringHandler} special method.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testInvoke09() throws Exception {
+    // given
+    String clazz = "com.formkiq.lambda.runtime.graalvm.TestRequestInputStringStringHandler::run";
+    Map<String, String> env = createEnv(clazz);
+
+    // when
+    LambdaRuntime.invoke(env);
+
+    // then
+    String expected = "this is a run string";
     assertEquals(expected, invocationResponseHandler.getResponse());
   }
 }
