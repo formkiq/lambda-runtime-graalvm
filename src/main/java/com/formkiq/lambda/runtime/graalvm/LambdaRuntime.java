@@ -2,36 +2,33 @@
  * Copyright [2020] FormKiQ Inc. Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You may obtain a copy of the License
  * at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.formkiq.lambda.runtime.graalvm;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
-import java.util.Map;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
+import java.util.Map;
 
-/**
- * 
- * Wrapper for the AWS Lambda Runtime.
- *
- */
+/** Wrapper for the AWS Lambda Runtime. */
 public class LambdaRuntime {
 
   /** Lambda Version. */
@@ -53,15 +50,15 @@ public class LambdaRuntime {
 
   /**
    * Find {@link RequestHandler} "handleRequest".
-   * 
+   *
    * @param handler {@link RequestHandler}
    * @return {@link Method}
    */
-  private static Method findRequestHandlerMethod(final RequestHandler<?, ?> handler) {
+  private static Method findRequestHandlerMethod(final Class<?> clazz, final String methodName) {
     Method method = null;
 
-    for (Method m : handler.getClass().getMethods()) {
-      if (m.getName().equalsIgnoreCase("handleRequest")) {
+    for (Method m : clazz.getMethods()) {
+      if (m.getName().equalsIgnoreCase(methodName)) {
         method = m;
         break;
       }
@@ -71,7 +68,7 @@ public class LambdaRuntime {
 
   /**
    * Handle Init Error.
-   * 
+   *
    * @param env {@link Map}
    * @param ex {@link Exception}
    * @throws IOException IOException
@@ -92,13 +89,13 @@ public class LambdaRuntime {
 
   /**
    * Handle Lambda Invocation Errors.
-   * 
+   *
    * @param env {@link Map}
    * @param requestId {@link String}
    * @param ex {@link Exception}
    */
-  public static void handleInvocationException(final Map<String, String> env,
-      final String requestId, final Exception ex) {
+  public static void handleInvocationException(
+      final Map<String, String> env, final String requestId, final Exception ex) {
     ex.printStackTrace();
 
     String runtimeApi = env.get("AWS_LAMBDA_RUNTIME_API");
@@ -117,13 +114,18 @@ public class LambdaRuntime {
 
   /**
    * Invoke Lambda Runtime.
-   * 
+   *
    * @param env {@link Map} - System environment parameters
-   * 
    * @throws IOException IOException
    */
   public static void invoke(final Map<String, String> env) throws IOException {
+    String method = null;
     String handlerName = env.get("_HANDLER");
+    int pos = handlerName.indexOf("::");
+    if (pos > 0) {
+      method = handlerName.substring(pos + 2);
+      handlerName = handlerName.substring(0, pos);
+    }
 
     Class<?> clazz = null;
 
@@ -134,19 +136,19 @@ public class LambdaRuntime {
     }
 
     if (clazz != null) {
-      invokeClass(env, clazz);
+      invokeClass(env, clazz, method);
     }
   }
 
   /**
    * Handle Lambda Request.
-   * 
+   *
    * @param env {@link Map}
    * @param clazz {@link Class}
    * @throws IOException Request Failed to get Lambda Runtime Event
    */
-  private static void invokeClass(final Map<String, String> env, final Class<?> clazz)
-      throws IOException {
+  private static void invokeClass(
+      final Map<String, String> env, final Class<?> clazz, final String method) throws IOException {
     String runtimeApi = env.get("AWS_LAMBDA_RUNTIME_API");
 
     String runtimeUrl =
@@ -162,11 +164,12 @@ public class LambdaRuntime {
       try {
         // Invoke Handler Method
         Object handler = clazz.getConstructor().newInstance();
-        String result = invokeLambdaRequestHandler(handler, requestId, event.getBody());
+        String result = invokeLambdaRequestHandler(handler, method, requestId, event.getBody());
 
         // Post the results of Handler Invocation
-        String invocationUrl = MessageFormat.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi,
-            LAMBDA_VERSION_DATE, requestId);
+        String invocationUrl =
+            MessageFormat.format(
+                LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
         HttpClient.post(invocationUrl, result);
 
       } catch (Exception e) {
@@ -181,25 +184,26 @@ public class LambdaRuntime {
 
   /**
    * Invoke Lambda method.
-   * 
+   *
    * @param handler {@link Object}
+   * @param methodName {@link String}
    * @param requestId {@link String}
    * @param payload {@link String}
    * @return {@link String}
    * @throws Exception Exception
    */
-  @SuppressWarnings("rawtypes")
-  private static String invokeLambdaRequestHandler(final Object handler, final String requestId,
-      final String payload) throws Exception {
+  private static String invokeLambdaRequestHandler(
+      final Object handler, final String methodName, final String requestId, final String payload)
+      throws Exception {
 
     String value = null;
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     Context context = new LambdaContext(requestId);
 
-    if (handler instanceof RequestHandler) {
-
-      value = invokeRequestHandler((RequestHandler) handler, payload, context);
-
+    if (methodName != null) {
+      value = invokeMethod(handler, methodName, payload, context);
+    } else if (handler instanceof RequestHandler) {
+      value = invokeMethod(handler, "handleRequest", payload, context);
     } else if (handler instanceof RequestStreamHandler) {
 
       value = invokeRequestStreamHandler((RequestStreamHandler) handler, payload, output, context);
@@ -214,24 +218,35 @@ public class LambdaRuntime {
 
   /**
    * Invoke {@link RequestHandler}.
-   * 
+   *
    * @param handler {@link RequestHandler}
+   * @param methodName {@link String}
    * @param payload {@link String}
    * @param context {@link Context}
    * @return {@link String}
+   * @throws InvocationTargetException
+   * @throws IllegalArgumentException IllegalArgumentException
+   * @throws IllegalAccessException
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static String invokeRequestHandler(final RequestHandler handler, final String payload,
-      final Context context) {
+  private static String invokeMethod(
+      final Object object, final String methodName, final String payload, final Context context)
+      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
     String val = "";
-    Method method = findRequestHandlerMethod(handler);
+    Method method = findRequestHandlerMethod(object.getClass(), methodName);
     Parameter parameter = method.getParameters()[0];
 
     Gson gson = new GsonBuilder().create();
     Object input = gson.fromJson(payload, parameter.getType());
 
-    Object value = (handler).handleRequest(input, context);
+    Object value = null;
+    if (methodName == null && object instanceof RequestHandler) {
+      value = ((RequestHandler) object).handleRequest(input, context);
+    } else {
+      value = method.invoke(object, input, context);
+    }
+
     Class<?> valueClass = value != null ? value.getClass() : null;
 
     if (valueClass != null && value != null) {
@@ -248,7 +263,7 @@ public class LambdaRuntime {
 
   /**
    * Invoke {@link RequestStreamHandler}.
-   * 
+   *
    * @param handler {@link RequestStreamHandler}
    * @param payload {@link String}
    * @param output {@link ByteArrayOutputStream}
@@ -256,8 +271,11 @@ public class LambdaRuntime {
    * @return {@link String}
    * @throws IOException IOException
    */
-  private static String invokeRequestStreamHandler(final RequestStreamHandler handler,
-      final String payload, final ByteArrayOutputStream output, final Context context)
+  private static String invokeRequestStreamHandler(
+      final RequestStreamHandler handler,
+      final String payload,
+      final ByteArrayOutputStream output,
+      final Context context)
       throws IOException {
 
     InputStream input = new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
@@ -268,7 +286,7 @@ public class LambdaRuntime {
 
   /**
    * Main Linux for Lambda.
-   * 
+   *
    * @param args String[]
    * @throws IOException IOException
    */

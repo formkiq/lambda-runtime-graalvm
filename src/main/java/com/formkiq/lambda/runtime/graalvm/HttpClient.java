@@ -2,13 +2,13 @@
  * Copyright [2020] FormKiQ Inc. Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You may obtain a copy of the License
  * at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.formkiq.lambda.runtime.graalvm;
 
@@ -20,15 +20,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Http Service using the build in Java {@link HttpURLConnection} library.
- *
- */
+/** Http Service using the build in Java {@link HttpURLConnection} library. */
 public class HttpClient {
 
   /**
    * Send 'Get' request.
-   * 
+   *
    * @param url {@link String}
    * @return {@link HttpResponse}
    * @throws IOException IOException
@@ -43,7 +40,7 @@ public class HttpClient {
 
   /**
    * Build {@link HttpResponse} from {@link HttpURLConnection}.
-   * 
+   *
    * @param conn {@link HttpURLConnection}
    * @return {@link HttpResponse}
    * @throws IOException IOException
@@ -52,11 +49,14 @@ public class HttpClient {
 
     HttpResponse response = new HttpResponse(conn.getResponseCode());
 
-    conn.getHeaderFields().entrySet().forEach(e -> {
-      if (e.getKey() != null && e.getValue() != null) {
-        response.addHeader(e.getKey(), e.getValue());
-      }
-    });
+    conn.getHeaderFields()
+        .entrySet()
+        .forEach(
+            e -> {
+              if (e.getKey() != null && e.getValue() != null) {
+                response.addHeader(e.getKey(), e.getValue());
+              }
+            });
 
     StringBuilder sb = new StringBuilder();
     BufferedReader br =
