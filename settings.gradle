@@ -8,3 +8,6 @@
  */
 
 rootProject.name = 'lambda-runtime-graalvm'
+include 'lambda-runtime'
+include 'graalvm-annotations'
+include 'graalvm-annotations-processors'

@@ -1,92 +1,83 @@
-plugins {
-    id 'java-library'
-    id 'maven-publish'
-	id 'signing'
-	id "com.diffplug.gradle.spotless" version "4.3.0"
-}
-
-group = 'com.formkiq'
-version = '1.1'
-
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
-
-repositories {
-    jcenter()
-}
-
-dependencies {
-	implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
-    testImplementation group: 'junit', name: 'junit', version:'4.+'
-}
-
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
-
-spotless {
-  java {
-    googleJavaFormat()
-  }
-}
-
-publishing {
-	publications {
-	    mavenJava(MavenPublication) {
-	    	artifactId = 'lambda-runtime-graalvm'
-	        from components.java
-	        
-	        pom {
-                name = 'FormKiQ Lambda Runtime Graalvm'
-                description = 'Lambda Runtime Graalvm'
-                url = 'https://github.com/formkiq/lambda-runtime-graalvm'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'mfriesen'
-                        name = 'Mike Friesen'
-                        email = 'mike@formkiq.com'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/formkiq/lambda-runtime-graalvm.git'
-                    developerConnection = 'scm:git:ssh://github.com/formkiq/lambda-runtime-graalvm.git'
-                    url = 'https://github.com/formkiq/lambda-runtime-graalvm.git'
-                }
-            }
-	    }
-	}
-	repositories {
-		maven {
-		  credentials {
-		    username project.repoUser
-		    password project.repoPassword
-		  }
-		  url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-		}
-	}
-}
-
-javadoc {
-    if(JavaVersion.current().isJava9Compatible()) {
-        options.addBooleanOption('html5', true)
+buildscript {
+    repositories {
+        maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
+    }
+    dependencies {
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:3.27.1"
     }
 }
 
-artifacts {
-    archives jar
-	
-    archives javadocJar
-    archives sourcesJar
+plugins {
+  id "com.github.spotbugs" version "4.5.0"
 }
 
-signing {
-    sign publishing.publications.mavenJava
+allprojects {
+
+	apply plugin: 'java-library'
+	apply plugin: 'maven-publish'
+	apply plugin: 'checkstyle'
+	apply plugin: 'signing'
+	apply plugin: 'com.diffplug.gradle.spotless'
+
+	sourceCompatibility = JavaVersion.VERSION_11
+	targetCompatibility = JavaVersion.VERSION_11
+
+    group 'com.formkiq'
+    version '2.0'
+
+	spotless {
+	  java {
+	    googleJavaFormat()
+	  }
+	}
+	
+	spotbugsMain {
+	    reports {
+	        html {
+	            enabled = true
+	            destination = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+	            stylesheet = 'fancy-hist.xsl'
+	        }
+	    }
+	}
+  
+	checkstyle {
+		toolVersion '8.29'
+		configFile file("config/checkstyle/checkstyle.xml")
+		configProperties = [project_loc: "${projectDir}"]
+  	}
+  
+    tasks.withType(Checkstyle).each { checkstyleTask ->
+	    checkstyleTask.doLast {
+	        reports.all { report ->
+	            def outputFile = report.destination
+	            if (outputFile.exists() && outputFile.text.contains("<error ")) {
+	                throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+	            }
+	        }
+	    }
+	}
+	
+	repositories {
+	    jcenter()
+	}
+    
+    java {
+	    withJavadocJar()
+	    withSourcesJar()
+	}
+    
+	javadoc {
+	    if(JavaVersion.current().isJava9Compatible()) {
+	        options.addBooleanOption('html5', true)
+	    }
+	}
+	
+	artifacts {
+	    archives jar
+		
+	    archives javadocJar
+	    archives sourcesJar
+	}
 }

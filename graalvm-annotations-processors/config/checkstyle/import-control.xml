@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE import-control PUBLIC
+    "-//Puppy Crawl//DTD Import Control 1.1//EN"
+    "http://www.puppycrawl.com/dtds/import_control_1_1.dtd">
+
+<import-control pkg="com.formkiq.graalvm">
+
+	<subpackage name="processors">
+	
+		<allow pkg="com.formkiq.graalvm.annotations" />
+		<allow pkg="com.google.auto.service" />
+		<allow pkg="com.google.gson" />
+		
+		<allow pkg="java.io" />
+		<allow pkg="java.net" />
+		<allow pkg="java.nio.file" />
+		<allow pkg="java.util" />
+		<allow pkg="java.lang.reflect" />
+		
+		<allow pkg="javax.annotation.processing" />
+		<allow pkg="javax.lang.model" />
+		<allow pkg="javax.tools" />
+
+	</subpackage>		
+</import-control>
