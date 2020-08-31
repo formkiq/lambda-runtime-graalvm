@@ -1,0 +1,46 @@
+
+publishing {
+	publications {
+	    mavenJava(MavenPublication) {
+	    	artifactId = 'lambda-runtime-graalvm-annotations'
+	        from components.java
+	        
+	        pom {
+                name = 'FormKiQ Lambda Runtime Graalvm Annotations'
+                description = 'Lambda Runtime Graalvm Annotations'
+                url = 'https://github.com/formkiq/lambda-runtime-graalvm'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'mfriesen'
+                        name = 'Mike Friesen'
+                        email = 'mike@formkiq.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/formkiq/lambda-runtime-graalvm.git'
+                    developerConnection = 'scm:git:ssh://github.com/formkiq/lambda-runtime-graalvm.git'
+                    url = 'https://github.com/formkiq/lambda-runtime-graalvm.git'
+                }
+            }
+	    }
+	}
+	repositories {
+		maven {
+		  credentials {
+		    username project.repoUser
+		    password project.repoPassword
+		  }
+		  url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+		}
+	}
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}

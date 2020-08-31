@@ -1,0 +1,22 @@
+[
+  {
+    "name": "sample.Test",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "fields": [
+      {
+        "name": "foo"
+      }
+    ],
+    "methods": [
+      {
+        "name": "bar",
+        "parameterTypes": [
+          "int"
+        ]
+      }
+    ]
+  }
+]
