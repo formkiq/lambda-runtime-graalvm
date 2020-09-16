@@ -24,7 +24,7 @@ allprojects {
 	targetCompatibility = JavaVersion.VERSION_11
 
     group 'com.formkiq'
-    version '2.0'
+    version '2.1'
 
 	spotless {
 	  java {
@@ -63,6 +63,10 @@ allprojects {
 	    jcenter()
 	}
     
+	check {
+    	  dependsOn(tasks.publishToMavenLocal)
+	}
+
     java {
 	    withJavadocJar()
 	    withSourcesJar()
@@ -79,5 +83,9 @@ allprojects {
 		
 	    archives javadocJar
 	    archives sourcesJar
+	}
+	
+	afterEvaluate {
+ 	   tasks.getByName('spotlessCheck').dependsOn(tasks.getByName('spotlessApply'))
 	}
 }

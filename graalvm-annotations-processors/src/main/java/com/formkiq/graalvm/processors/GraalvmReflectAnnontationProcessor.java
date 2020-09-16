@@ -13,7 +13,11 @@
 package com.formkiq.graalvm.processors;
 
 import com.formkiq.graalvm.annotations.Reflectable;
+import com.formkiq.graalvm.annotations.ReflectableClass;
+import com.formkiq.graalvm.annotations.ReflectableClasses;
+import com.formkiq.graalvm.annotations.ReflectableField;
 import com.formkiq.graalvm.annotations.ReflectableImport;
+import com.formkiq.graalvm.annotations.ReflectableMethod;
 import com.google.auto.service.AutoService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,6 +29,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +49,9 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
@@ -52,7 +59,9 @@ import javax.tools.StandardLocation;
 @AutoService(Processor.class)
 @SupportedAnnotationTypes({
   "com.formkiq.graalvm.annotations.Reflectable",
-  "com.formkiq.graalvm.annotations.ReflectableImport"
+  "com.formkiq.graalvm.annotations.ReflectableImport",
+  "com.formkiq.graalvm.annotations.ReflectableClasses",
+  "com.formkiq.graalvm.annotations.ReflectableClass"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
@@ -127,6 +136,7 @@ public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
 
       processingReflectableImports(roundEnv);
       processingReflectable(roundEnv);
+      processReflectableClasses(roundEnv);
     }
 
     return true;
@@ -154,13 +164,33 @@ public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
   }
 
   /**
+   * Process Class.
+   *
+   * @param reflect {@link Reflect}
+   * @param reflectable {@link ReflectableClass}
+   * @return {@link Reflect}
+   */
+  private Reflect processClass(final Reflect reflect, final ReflectableClass reflectable) {
+
+    LOGGER.log(LOGLEVEL, "processClass " + reflect.name());
+    reflect
+        .allDeclaredConstructors(reflectable.allDeclaredConstructors())
+        .allDeclaredFields(reflectable.allDeclaredFields())
+        .allDeclaredMethods(reflectable.allDeclaredMethods())
+        .allPublicConstructors(reflectable.allPublicConstructors())
+        .allPublicFields(reflectable.allPublicFields())
+        .allPublicMethods(reflectable.allPublicMethods());
+
+    return reflect;
+  }
+
+  /**
    * Process Imported Class using {@link Class}.
    *
    * @param clazz {@link Class}
    */
   private void processImportedClass(final String clazz) {
     try {
-
       Class<?> forName = Class.forName(clazz);
       Reflectable reflectable = forName.getAnnotation(Reflectable.class);
       Reflect reflect = getReflect(clazz);
@@ -200,8 +230,25 @@ public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
    *
    * @param element {@link Element}
    */
-  @SuppressWarnings("unchecked")
   private void processImportedClasses(final Element element) {
+
+    List<String> classNames = findClasses(element, "classes");
+    for (String clazz : classNames) {
+      LOGGER.log(LOGLEVEL, "processing ImportedClass " + clazz);
+      processImportedClass(clazz);
+    }
+  }
+
+  /**
+   * Find Class Names using {@link AnnotationMirror}.
+   *
+   * @param element {@link Element}
+   * @param key {@link String}
+   * @return {@link List} {@link String}
+   */
+  private List<String> findClasses(final Element element, final String key) {
+
+    List<String> classNames = new ArrayList<>();
 
     List<? extends AnnotationMirror> annotationMirrors = element.getAnnotationMirrors();
 
@@ -213,11 +260,12 @@ public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
       for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
           elementValues.entrySet()) {
 
-        String key = entry.getKey().getSimpleName().toString();
+        String simpleNameKey = entry.getKey().getSimpleName().toString();
         Object value = entry.getValue().getValue();
 
-        if ("classes".equals(key)) {
+        if (key.equals(simpleNameKey)) {
 
+          @SuppressWarnings("unchecked")
           List<? extends AnnotationValue> typeMirrors = (List<? extends AnnotationValue>) value;
 
           for (AnnotationValue val : typeMirrors) {
@@ -229,6 +277,8 @@ public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
         }
       }
     }
+
+    return classNames;
   }
 
   /**
@@ -264,6 +314,74 @@ public class GraalvmReflectAnnontationProcessor extends AbstractProcessor {
         }
       }
     }
+  }
+
+  /**
+   * Processing classes with 'ReflectableClasses' and 'ReflectableClass' annotation.
+   *
+   * @param roundEnv {@link RoundEnvironment}
+   */
+  private void processReflectableClasses(final RoundEnvironment roundEnv) {
+
+    for (Element element : roundEnv.getElementsAnnotatedWith(ReflectableClasses.class)) {
+
+      String className = getClassName(element);
+      LOGGER.log(LOGLEVEL, "processing 'ReflectableClasses' annotation on class " + className);
+
+      ReflectableClasses[] reflectables = element.getAnnotationsByType(ReflectableClasses.class);
+
+      for (ReflectableClasses reflectable : reflectables) {
+
+        ReflectableClass[] classes = reflectable.value();
+        for (ReflectableClass clazz : classes) {
+          processReflectableClass(clazz);
+        }
+      }
+    }
+
+    for (Element element : roundEnv.getElementsAnnotatedWith(ReflectableClass.class)) {
+      String className = getClassName(element);
+      LOGGER.log(LOGLEVEL, "processing 'ReflectableClasses' annotation on class " + className);
+
+      ReflectableClass[] reflectables = element.getAnnotationsByType(ReflectableClass.class);
+      for (ReflectableClass clazz : reflectables) {
+        processReflectableClass(clazz);
+      }
+    }
+  }
+
+  /**
+   * Processing classes with 'ReflectableClass' annotation.
+   *
+   * @param reflectable {@link ReflectableClass}
+   */
+  private void processReflectableClass(final ReflectableClass reflectable) {
+
+    String className = null;
+    try {
+      reflectable.className();
+    } catch (MirroredTypeException e) {
+      TypeMirror typeMirror = e.getTypeMirror();
+      className = asTypeElement(typeMirror).getQualifiedName().toString();
+    }
+
+    Reflect reflect = getReflect(className);
+    reflect = processClass(reflect, reflectable);
+
+    for (ReflectableField field : reflectable.fields()) {
+      LOGGER.log(LOGLEVEL, "adding Field " + field.name() + " to " + className);
+      reflect.addField(field.name(), field.allowWrite());
+    }
+
+    for (ReflectableMethod method : reflectable.methods()) {
+      LOGGER.log(LOGLEVEL, "adding Method " + method.name() + " to " + className);
+      reflect.addMethod(method.name(), Arrays.asList(method.parameterTypes()));
+    }
+  }
+
+  private TypeElement asTypeElement(final TypeMirror typeMirror) {
+    Types typeUtils = this.processingEnv.getTypeUtils();
+    return (TypeElement) typeUtils.asElement(typeMirror);
   }
 
   /**

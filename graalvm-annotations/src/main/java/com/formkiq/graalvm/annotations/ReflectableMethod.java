@@ -17,22 +17,25 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** An annotation to import existing @Reflectable resources from dependencies. */
+/**
+ * An annotation that allows adding a class to Graalvm's list of Reflection classes to process.
+ * Based on https://github.com/oracle/graal/blob/master/substratevm/REFLECTION.md
+ */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-public @interface ReflectableImport {
+public @interface ReflectableMethod {
 
   /**
-   * Include all files to a {@link ElementType#TYPE}.
+   * Set Method Name.
    *
-   * @return String[]
+   * @return boolean
    */
-  String[] files() default "";
+  String name() default "";
 
   /**
-   * Include all classes to a {@link ElementType#TYPE}.
+   * Set Parameter Types.
    *
-   * @return Class[]
+   * @return boolean
    */
-  Class<?>[] classes() default {};
+  String[] parameterTypes() default {};
 }

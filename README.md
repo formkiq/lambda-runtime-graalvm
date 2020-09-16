@@ -1,11 +1,25 @@
 
 # Lambda Runtime Graalvm
-=====================================
 
-Library for building AWS Lambda Functions using Graalvm. 
+Lambda Runtime Graalvm is a Java Library that makes it easy to convert [AWS Lambdas](https://aws.amazon.com/lambda/) writting in [Java](https://www.java.com) using [Graalvm](https://www.graalvm.org/). 
+
+Benefits of using [Graalvm](https://www.graalvm.org/) over [Java](https://www.java.com):
+ * Much faster startup time (seconds to milliseconds)
+ * Much lower memory usage
+
+## Components
+ * [lambda-runtime](https://github.com/formkiq/lambda-runtime-graalvm/tree/master/lambda-runtime) - AWS Lambda Graalvm Runtime
+ * [graalvm-annotations](https://github.com/formkiq/lambda-runtime-graalvm/tree/master/graalvm-annotations) - Graalvm Annotations
+ * [graalvm-annotations-processors](https://github.com/formkiq/lambda-runtime-graalvm/tree/master/graalvm-annotations-processors) - Graalvm Annotations Processors
+ * [gradle-plugin](https://github.com/formkiq/gradle-plugin/tree/master/samples) - Gradle Plugin
+ * [samples](https://github.com/formkiq/lambda-runtime-graalvm/tree/master/samples) - Graalvm Sample Code
+
+## Tutorial
+
+ https://blog.formkiq.com/tutorials/aws-lambda-graalvm
 
 
-Installation
+## Building
 ------------------
 Clone the repository, and use
 
@@ -32,8 +46,7 @@ the javadoc documentation is located at path
 ```
 
 
-Maven Installation
-------------------
+## Maven Installation
 
 Add the following to your pom.xml
 
@@ -47,8 +60,7 @@ Add the following to your pom.xml
     </dependency>
 ```
 
-Gradle Installation
--------------------
+## Gradle Installation
 
 Add the following to your build.gradle
 
@@ -57,7 +69,6 @@ Add the following to your build.gradle
    <!-- Replace VERSION with the version you want to use -->
 ```
 
-Licensing
-=========
+## Licensing
 
 This library is licensed under the Apache Software License, version 2.0.

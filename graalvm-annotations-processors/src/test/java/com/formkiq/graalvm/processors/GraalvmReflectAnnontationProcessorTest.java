@@ -79,6 +79,90 @@ public class GraalvmReflectAnnontationProcessorTest {
 
   @SuppressWarnings("unchecked")
   @Test
+  public void testReflectableClasses01() throws IOException {
+    Compilation compilation =
+        javac()
+            .withProcessors(new GraalvmReflectAnnontationProcessor())
+            .compile(
+                JavaFileObjects.forSourceString(
+                    "Test",
+                    "package test;\n"
+                        + "import com.formkiq.graalvm.annotations.*;\n"
+                        + "@ReflectableClasses({@ReflectableClass("
+                        + "className=com.formkiq.graalvm.processors.Test4.class,"
+                        + "allDeclaredConstructors=false,\n"
+                        + "    fields = {@ReflectableField(allowWrite = true, name = \"foo\")},\n"
+                        + "    methods = {@ReflectableMethod(name = \"bar\", "
+                        + "parameterTypes = {\"java.lang.String\"})})})\n"
+                        + "public class Test { }\n"));
+
+    List<Map<String, Object>> map = getReflectConf(compilation);
+
+    assertEquals(1, map.size());
+    assertEquals("com.formkiq.graalvm.processors.Test4", map.get(0).get("name"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allPublicConstructors"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allPublicMethods"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allPublicFields"));
+    assertEquals(Boolean.FALSE, map.get(0).get("allDeclaredConstructors"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allDeclaredMethods"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allDeclaredFields"));
+
+    List<Map<String, String>> fields = (List<Map<String, String>>) map.get(0).get("fields");
+    assertEquals(1, fields.size());
+    assertEquals("foo", fields.get(0).get("name"));
+    assertEquals(Boolean.TRUE, fields.get(0).get("allowWrite"));
+
+    List<Map<String, Object>> methods = (List<Map<String, Object>>) map.get(0).get("methods");
+    assertEquals(1, methods.size());
+    assertEquals("bar", methods.get(0).get("name"));
+    assertEquals(1, ((List<String>) methods.get(0).get("parameterTypes")).size());
+    assertEquals("java.lang.String", ((List<String>) methods.get(0).get("parameterTypes")).get(0));
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testReflectableClass01() throws IOException {
+    Compilation compilation =
+        javac()
+            .withProcessors(new GraalvmReflectAnnontationProcessor())
+            .compile(
+                JavaFileObjects.forSourceString(
+                    "Test",
+                    "package test;\n"
+                        + "import com.formkiq.graalvm.annotations.*;\n"
+                        + "@ReflectableClass("
+                        + "className=com.formkiq.graalvm.processors.Test4.class,"
+                        + "allDeclaredConstructors=false,\n"
+                        + "    fields = {@ReflectableField(allowWrite = true, name = \"foo\")},\n"
+                        + "    methods = {@ReflectableMethod(name = \"bar\", "
+                        + "parameterTypes = {\"java.lang.String\"})})\n"
+                        + "public class Test { }\n"));
+
+    List<Map<String, Object>> map = getReflectConf(compilation);
+
+    assertEquals(1, map.size());
+    assertEquals("com.formkiq.graalvm.processors.Test4", map.get(0).get("name"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allPublicConstructors"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allPublicMethods"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allPublicFields"));
+    assertEquals(Boolean.FALSE, map.get(0).get("allDeclaredConstructors"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allDeclaredMethods"));
+    assertEquals(Boolean.TRUE, map.get(0).get("allDeclaredFields"));
+
+    List<Map<String, String>> fields = (List<Map<String, String>>) map.get(0).get("fields");
+    assertEquals(1, fields.size());
+    assertEquals("foo", fields.get(0).get("name"));
+    assertEquals(Boolean.TRUE, fields.get(0).get("allowWrite"));
+
+    List<Map<String, Object>> methods = (List<Map<String, Object>>) map.get(0).get("methods");
+    assertEquals(1, methods.size());
+    assertEquals("bar", methods.get(0).get("name"));
+    assertEquals(1, ((List<String>) methods.get(0).get("parameterTypes")).size());
+    assertEquals("java.lang.String", ((List<String>) methods.get(0).get("parameterTypes")).get(0));
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
   public void testReflectableImportFile01() throws IOException {
     Compilation compilation =
         javac()
