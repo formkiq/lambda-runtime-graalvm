@@ -13,6 +13,7 @@
 package com.formkiq.lambda.runtime.graalvm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
 
@@ -286,12 +287,32 @@ public class LambdaRuntimeTest {
       System.setProperty(e.getKey(), e.getValue());
     }
 
-    System.out.println("MAP: " + env);
     // when
     LambdaRuntime.main(new String[] {});
 
     // then
     String expected = "this is a run string";
     assertEquals(expected, invocationResponseHandler.getResponse());
+  }
+
+  /**
+   * Test invoke Lambda with {@link TestRequestApiGatewayProxyHandler} special method and without
+   * environment variables.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testInvoke11() throws Exception {
+    // given
+    invocationNextHandler.setResponseContent("{\"body\":\"this is some data\"}");
+    Map<String, String> env = createEnv(TestRequestApiGatewayProxyHandler.class.getName());
+
+    // when
+    LambdaRuntime.invoke(env);
+
+    // then
+    String expected = "{\"body\":\"this is some data\"}";
+    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertNotNull(System.getProperty("_X_AMZN_TRACE_ID"));
   }
 }
