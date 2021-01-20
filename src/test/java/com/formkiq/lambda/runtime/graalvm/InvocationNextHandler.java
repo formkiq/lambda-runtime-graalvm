@@ -21,18 +21,11 @@ public class InvocationNextHandler implements ExpectationResponseCallback {
 
   /** Lambda Request Id. */
   private static final String REQUEST_ID = "testrequestid";
+  /** Lambda Request Id. */
+  private static final String TRACE_ID = "testtraceid";
 
   /** Response Content. */
   private String responseContent = "test";
-
-  /**
-   * Get Response Content.
-   *
-   * @return {@link String}
-   */
-  public String getResponseContent() {
-    return this.responseContent;
-  }
 
   /**
    * Set Response Content.
@@ -48,6 +41,8 @@ public class InvocationNextHandler implements ExpectationResponseCallback {
     final int statusCode = 200;
     return HttpResponse.response()
         .withHeader("Lambda-Runtime-Aws-Request-Id", REQUEST_ID)
+        .withHeader("Lambda-Runtime-Trace-Id", TRACE_ID)
+        .withBody(responseContent)
         .withStatusCode(Integer.valueOf(statusCode));
   }
 }

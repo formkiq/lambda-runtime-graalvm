@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -183,16 +185,22 @@ public class LambdaRuntime {
     while (true) {
 
       // Get next Lambda Event
+      Context context = null;
       String eventBody = null;
       String requestId = UUID.randomUUID().toString();
 
       if (runtimeUrl != null) {
         HttpResponse event = HttpClient.get(runtimeUrl);
         requestId = event.getHeaderValue("Lambda-Runtime-Aws-Request-Id");
+
+        String xamazTraceId = event.getHeaderValue("Lambda-Runtime-Trace-Id");
+        if (xamazTraceId != null) {
+          System.setProperty("_X_AMZN_TRACE_ID", xamazTraceId);
+        }
+
+        context = new LambdaContext(requestId);
         eventBody = event.getBody();
       }
-
-      Context context = new LambdaContext(requestId);
 
       try {
         // Invoke Handler Method
@@ -266,18 +274,20 @@ public class LambdaRuntime {
    * @throws InvocationTargetException InvocationTargetException
    * @throws IllegalArgumentException IllegalArgumentException
    * @throws IllegalAccessException IllegalAccessException
+   * @throws ClassNotFoundException ClassNotFoundException
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static String invokeMethod(
       final Object object, final String methodName, final String payload, final Context context)
-      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+          ClassNotFoundException {
 
     String val = "";
     Method method = findRequestHandlerMethod(object.getClass(), methodName);
-    Parameter parameter = method.getParameters()[0];
-
+    Class<?> parameterType = getParameterType(object, method);
     Gson gson = new GsonBuilder().create();
-    Object input = gson.fromJson(payload, parameter.getType());
+
+    Object input = gson.fromJson(payload, parameterType);
 
     Object value = null;
     if (methodName == null && object instanceof RequestHandler) {
@@ -298,6 +308,33 @@ public class LambdaRuntime {
     }
 
     return val;
+  }
+
+  /**
+   * Get the Parameter Type of the Object.
+   *
+   * @param object {@link Object}
+   * @param method {@link Method}
+   * @return {@link Class}
+   * @throws ClassNotFoundException ClassNotFoundException
+   */
+  private static Class<?> getParameterType(final Object object, final Method method)
+      throws ClassNotFoundException {
+    Parameter parameter = method.getParameters()[0];
+    Class<?> parameterType = parameter.getType();
+
+    if (Object.class.equals(parameterType)) {
+
+      Type[] types = object.getClass().getGenericInterfaces();
+      if (types.length > 0 && types[0] instanceof ParameterizedType) {
+        ParameterizedType p = (ParameterizedType) types[0];
+        if (p.getActualTypeArguments().length > 0) {
+          parameterType = Class.forName(p.getActualTypeArguments()[0].getTypeName());
+        }
+      }
+    }
+
+    return parameterType;
   }
 
   /**
