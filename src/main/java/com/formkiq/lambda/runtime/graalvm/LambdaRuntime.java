@@ -195,7 +195,7 @@ public class LambdaRuntime {
 
         String xamazTraceId = event.getHeaderValue("Lambda-Runtime-Trace-Id");
         if (xamazTraceId != null) {
-          System.setProperty("_X_AMZN_TRACE_ID", xamazTraceId);
+          System.setProperty("com.amazonaws.xray.traceHeader", xamazTraceId);
         }
 
         context = new LambdaContext(requestId);
