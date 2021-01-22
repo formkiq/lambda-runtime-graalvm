@@ -313,6 +313,6 @@ public class LambdaRuntimeTest {
     // then
     String expected = "{\"body\":\"this is some data\"}";
     assertEquals(expected, invocationResponseHandler.getResponse());
-    assertNotNull(System.getProperty("_X_AMZN_TRACE_ID"));
+    assertNotNull(System.getProperty("com.amazonaws.xray.traceHeader"));
   }
 }
