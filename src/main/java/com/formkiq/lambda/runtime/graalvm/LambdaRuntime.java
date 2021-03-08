@@ -150,17 +150,18 @@ public class LambdaRuntime {
       handlerName = handlerName.substring(0, pos);
     }
 
-    Class<?> clazz = null;
+    Object handler = null;
 
     try {
-      clazz = Class.forName(handlerName);
+      Class<?> clazz = Class.forName(handlerName);
+      handler = clazz.getConstructor().newInstance();
     } catch (Exception e) {
       Context context = new LambdaContext(UUID.randomUUID().toString());
       LambdaRuntime.handleInitError(env, e, context);
     }
 
-    if (clazz != null) {
-      invokeClass(env, clazz, method);
+    if (handler != null) {
+      invokeClass(env, handler, method);
     }
   }
 
@@ -168,12 +169,12 @@ public class LambdaRuntime {
    * Handle Lambda Request.
    *
    * @param env {@link Map}
-   * @param clazz {@link Class}
+   * @param handler {@link Object}
    * @param method {@link String}
    * @throws IOException Request Failed to get Lambda Runtime Event
    */
   private static void invokeClass(
-      final Map<String, String> env, final Class<?> clazz, final String method) throws IOException {
+      final Map<String, String> env, final Object handler, final String method) throws IOException {
     String runtimeApi = env.get("AWS_LAMBDA_RUNTIME_API");
 
     String runtimeUrl =
@@ -203,8 +204,7 @@ public class LambdaRuntime {
       }
 
       try {
-        // Invoke Handler Method
-        Object handler = clazz.getConstructor().newInstance();
+
         String result = invokeLambdaRequestHandler(handler, method, context, eventBody);
 
         if (runtimeApi != null) {
