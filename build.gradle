@@ -22,7 +22,7 @@ sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
 group 'com.formkiq'
-version '2.2.1'
+version '2.2.2'
 
 spotless {
   java {
@@ -143,4 +143,8 @@ publishing {
 
 signing {
     sign publishing.publications.mavenJava
+}
+
+check {
+    dependsOn(tasks.publishToMavenLocal)
 }
