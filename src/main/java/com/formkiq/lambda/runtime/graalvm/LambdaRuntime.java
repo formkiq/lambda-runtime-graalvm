@@ -332,6 +332,9 @@ public class LambdaRuntime {
           parameterType = Class.forName(p.getActualTypeArguments()[0].getTypeName());
         }
       }
+
+    } else if (Map.class.equals(parameterType)) {
+      parameterType = Map.class;
     }
 
     return parameterType;
