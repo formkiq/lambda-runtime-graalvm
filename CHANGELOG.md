@@ -1,5 +1,9 @@
 # Lambda Runtime Graalvm Releases #
 
+### Version 2.3.0 (April 18, 2021)
+- [Pull 10](https://github.com/formkiq/lambda-runtime-graalvm/pull/10)
+ * Fixed reflection bug when using GraalVM
+
 ### Version 2.2.2 (March 7, 2021)
 - [Pull 9](https://github.com/formkiq/lambda-runtime-graalvm/pull/9)
  * Lambda handler class is instantiated for each request
