@@ -329,12 +329,14 @@ public class LambdaRuntime {
       if (types.length > 0 && types[0] instanceof ParameterizedType) {
         ParameterizedType p = (ParameterizedType) types[0];
         if (p.getActualTypeArguments().length > 0) {
-          parameterType = Class.forName(p.getActualTypeArguments()[0].getTypeName());
+          String typeName = p.getActualTypeArguments()[0].getTypeName();
+          if (typeName.startsWith("java.util.Map")) {
+            parameterType = Map.class;
+          } else {
+            parameterType = Class.forName(typeName);
+          }
         }
       }
-
-    } else if (Map.class.equals(parameterType)) {
-      parameterType = Map.class;
     }
 
     return parameterType;
