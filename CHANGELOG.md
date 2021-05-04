@@ -1,5 +1,9 @@
 # Lambda Runtime Graalvm Releases #
 
+### Version 2.3.1 (May 3, 2021)
+- [Pull 11](https://github.com/formkiq/lambda-runtime-graalvm/pull/11)
+ * Fixed Graalvm handling java.util.Map parameter type
+
 ### Version 2.3.0 (April 18, 2021)
 - [Pull 10](https://github.com/formkiq/lambda-runtime-graalvm/pull/10)
  * Fixed reflection bug when using GraalVM
