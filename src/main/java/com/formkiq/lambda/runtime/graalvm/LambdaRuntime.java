@@ -38,17 +38,22 @@ public class LambdaRuntime {
 
   /** Lambda Version. */
   private static final String LAMBDA_VERSION_DATE = "2018-06-01";
+
   /** Lambda Runtime URL. */
   private static final String LAMBDA_RUNTIME_URL_TEMPLATE =
       "http://{0}/{1}/runtime/invocation/next";
+
   /** Lambda Runtime Invocation URL. */
   private static final String LAMBDA_INVOCATION_URL_TEMPLATE =
       "http://{0}/{1}/runtime/invocation/{2}/response";
+
   /** Lambda Init Error URL. */
   private static final String LAMBDA_INIT_ERROR_URL_TEMPLATE = "http://{0}/{1}/runtime/init/error";
+
   /** Lambda Error Inocation Url. */
   private static final String LAMBDA_ERROR_URL_TEMPLATE =
       "http://{0}/{1}/runtime/invocation/{2}/error";
+
   /** Error Response Template. */
   private static final String ERROR_RESPONSE_TEMPLATE =
       "'{'\"errorMessage\":\"{0}\",\"errorType\":\"{1}\"'}'";
@@ -279,7 +284,9 @@ public class LambdaRuntime {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static String invokeMethod(
       final Object object, final String methodName, final String payload, final Context context)
-      throws IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+      throws IllegalAccessException,
+          IllegalArgumentException,
+          InvocationTargetException,
           ClassNotFoundException {
 
     String val = "";

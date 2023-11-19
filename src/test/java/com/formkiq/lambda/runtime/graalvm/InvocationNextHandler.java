@@ -21,6 +21,7 @@ public class InvocationNextHandler implements ExpectationResponseCallback {
 
   /** Lambda Request Id. */
   private static final String REQUEST_ID = "testrequestid";
+
   /** Lambda Request Id. */
   private static final String TRACE_ID = "testtraceid";
 
