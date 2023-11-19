@@ -22,6 +22,7 @@ public class LambdaContext implements Context {
 
   /** AWS Request Id. */
   private String awsRequestId;
+
   /** {@link LambdaLogger}. */
   private LambdaLogger logger = new LambdaLoggerSystemOut();
 

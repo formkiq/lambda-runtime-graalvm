@@ -32,15 +32,20 @@ public class LambdaRuntimeTest {
 
   /** Lambda Request Id. */
   private static final String REQUEST_ID = "testrequestid";
+
   /** Server Port. */
   private static final int SERVER_PORT = 8001;
+
   /** Server Host. */
   private static final String SERVER_HOST = "localhost";
+
   /** {@link ClientAndServer}. */
   private static ClientAndServer mockServer;
+
   /** {@link InvocationResponseHandler}. */
   private static InvocationResponseHandler invocationResponseHandler =
       new InvocationResponseHandler();
+
   /** {@link InvocationNextHandler}. */
   private static InvocationNextHandler invocationNextHandler = new InvocationNextHandler();
 
