@@ -22,9 +22,22 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 public class TestRequestApiGatewayProxyHandler
     implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
+  /** {@link APIGatewayProxyRequestEvent}. */
+  private APIGatewayProxyRequestEvent event;
+
+  /**
+   * Get {@link APIGatewayProxyRequestEvent}.
+   *
+   * @return {@link APIGatewayProxyRequestEvent}
+   */
+  public APIGatewayProxyRequestEvent getEvent() {
+    return event;
+  }
+
   @Override
   public APIGatewayProxyResponseEvent handleRequest(
       final APIGatewayProxyRequestEvent input, final Context context) {
+    this.event = input;
     APIGatewayProxyResponseEvent e = new APIGatewayProxyResponseEvent();
     e.setBody(input.getBody());
     return e;

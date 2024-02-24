@@ -15,6 +15,8 @@ package com.formkiq.lambda.runtime.graalvm;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.ByteArrayInputStream;
@@ -26,8 +28,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -292,9 +297,9 @@ public class LambdaRuntime {
     String val = "";
     Method method = findRequestHandlerMethod(object.getClass(), methodName);
     Class<?> parameterType = getParameterType(object, method);
-    Gson gson = new GsonBuilder().create();
 
-    Object input = gson.fromJson(payload, parameterType);
+    Gson gson = buildJsonProvider();
+    Object input = convertToObject(gson, payload, parameterType);
 
     Object value = null;
     if (methodName == null && object instanceof RequestHandler) {
@@ -315,6 +320,30 @@ public class LambdaRuntime {
     }
 
     return val;
+  }
+
+  static Object convertToObject(
+      final Gson gson, final String payload, final Class<?> parameterType) {
+    return gson.fromJson(payload, parameterType);
+  }
+
+  static Gson buildJsonProvider() {
+    return new GsonBuilder()
+        .setFieldNamingStrategy(new AwsEventsFieldNamingStrategy())
+        .setExclusionStrategies(
+            new ExclusionStrategy() {
+              @Override
+              public boolean shouldSkipField(final FieldAttributes f) {
+                return false;
+              }
+
+              @Override
+              public boolean shouldSkipClass(final Class<?> clazz) {
+                Collection<Class<?>> list = Arrays.asList(ByteBuffer.class);
+                return list.contains(clazz);
+              }
+            })
+        .create();
   }
 
   /**

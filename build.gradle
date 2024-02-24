@@ -4,13 +4,13 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'checkstyle'
-    id 'com.diffplug.spotless' version '6.22.0'
-    id 'com.github.spotbugs'  version '5.0.14'
-    id 'com.github.ben-manes.versions' version '0.50.0'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.github.spotbugs'  version '6.0.7'
+    id 'com.github.ben-manes.versions' version '0.51.0'
 }
 
 group 'com.formkiq'
-version '2.4.0'
+version '2.5.0-SNAPSHOT'
 
 spotbugs {
   excludeFilter = file("$rootDir/config/spotbugs/spotbugs-exclude.xml")
@@ -78,7 +78,7 @@ afterEvaluate {
 dependencies {
 	implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.3'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
-	testImplementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.11.3'
+	implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.11.4'
     testImplementation group: 'junit', name: 'junit', version:'4.+'
     testImplementation group: 'org.mock-server', name: 'mockserver-netty', version: '5.15.0'
     testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.9'
@@ -121,7 +121,8 @@ publishing {
 		    username project.repoUser
 		    password project.repoPassword
 		  }
-		  url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+		  //url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+		  url "https://oss.sonatype.org/content/repositories/snapshots/"
 		}
 	}
 }

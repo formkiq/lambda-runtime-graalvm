@@ -13,13 +13,27 @@
 package com.formkiq.lambda.runtime.graalvm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
+import com.google.gson.Gson;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -319,5 +333,168 @@ public class LambdaRuntimeTest {
     String expected = "{\"body\":\"this is some data\"}";
     assertEquals(expected, invocationResponseHandler.getResponse());
     assertNotNull(System.getProperty("com.amazonaws.xray.traceHeader"));
+  }
+
+  /**
+   * Test invoke Lambda with {@link APIGatewayProxyRequestEvent}.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testApiGatewayProxyRequestEvent01() throws Exception {
+    // given
+    String payload = loadContent("/APIGatewayProxyRequestEvent/event01.json");
+
+    Gson gson = LambdaRuntime.buildJsonProvider();
+
+    // when
+    APIGatewayProxyRequestEvent event =
+        (APIGatewayProxyRequestEvent)
+            LambdaRuntime.convertToObject(gson, payload, APIGatewayProxyRequestEvent.class);
+
+    // then
+    assertEquals("GET", event.getHttpMethod());
+    assertEquals("/documents", event.getPath());
+    assertEquals("/documents", event.getResource());
+
+    final int expected = 18;
+    assertEquals(expected, event.getMultiValueHeaders().size());
+    assertFalse(event.getIsBase64Encoded().booleanValue());
+  }
+
+  /**
+   * Test invoke Lambda with {@link DynamodbEvent}.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testDynamodbEvent01() throws Exception {
+    // given
+    String payload = loadContent("/DynamodbEvent/event01.json");
+
+    Gson gson = LambdaRuntime.buildJsonProvider();
+
+    // when
+    DynamodbEvent event =
+        (DynamodbEvent) LambdaRuntime.convertToObject(gson, payload, DynamodbEvent.class);
+
+    // then
+    assertEquals(2, event.getRecords().size());
+
+    DynamodbStreamRecord record = event.getRecords().get(0);
+    assertEquals("us-east-2", record.getAwsRegion());
+    assertEquals("a2e11a1268fa1f98b2dd17fd95cffc0f", record.getEventID());
+    assertEquals("INSERT", record.getEventName());
+    assertEquals("aws:dynamodb", record.getEventSource());
+    assertEquals(
+        "arn:aws:dynamodb:us-east-2:1111111111:table/test/stream/2022-11-13T00:56:05.381",
+        record.getEventSourceARN());
+    assertEquals("1.1", record.getEventVersion());
+    assertNull(record.getUserIdentity());
+
+    StreamRecord db = record.getDynamodb();
+    assertNull(db.getApproximateCreationDateTime());
+    assertEquals(
+        "{SK={S: document,}, PK={S: docs#acd4be1b-9466-4dcd-b8b8-e5b19135b460,}}",
+        db.getKeys().toString());
+
+    String newImageExpected =
+        "{path={S: /somewhere/else/test.pdf,}, "
+            + "lastModifiedDate={S: 2022-11-13T01:07:01+0000,}, "
+            + "inserteddate={S: 2022-11-13T01:07:01+0000,}, SK={S: document,}, "
+            + "documentId={S: acd4be1b-9466-4dcd-b8b8-e5b19135b460,}, "
+            + "PK={S: docs#acd4be1b-9466-4dcd-b8b8-e5b19135b460,}, "
+            + "userId={S: testadminuser@formkiq.com,}, "
+            + "md#content={S: this is some content karate,}}";
+    assertEquals(newImageExpected, db.getNewImage().toString());
+    assertEquals("4409700000000012453238087", db.getSequenceNumber());
+    assertEquals("299", db.getSizeBytes().toString());
+    assertEquals("NEW_AND_OLD_IMAGES", db.getStreamViewType());
+  }
+
+  /**
+   * Test invoke Lambda with {@link S3Event}.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testS3Event01() throws Exception {
+    // given
+    String payload = loadContent("/S3Event/event01.json");
+
+    Gson gson = LambdaRuntime.buildJsonProvider();
+
+    // when
+    S3Event event = (S3Event) LambdaRuntime.convertToObject(gson, payload, S3Event.class);
+
+    // then
+    assertEquals(1, event.getRecords().size());
+
+    S3EventNotificationRecord record = event.getRecords().get(0);
+    assertEquals("us-east-1", record.getAwsRegion());
+    assertEquals("ObjectCreated:Put", record.getEventName());
+    assertEquals("aws:s3", record.getEventSource());
+    assertNull(record.getEventTime());
+    assertEquals("2.0", record.getEventVersion());
+    assertEquals("EXAMPLE", record.getUserIdentity().getPrincipalId());
+
+    assertEquals("127.0.0.1", record.getRequestParameters().getSourceIPAddress());
+    assertEquals(
+        "EXAMPLE123/5678abcdefghijklambdaisawesome/mnopqrstuvwxyzABCDEFGH",
+        record.getResponseElements().getxAmzId2());
+    assertEquals("EXAMPLE123456789", record.getResponseElements().getxAmzRequestId());
+
+    assertEquals("arn:aws:s3:::example-bucket", record.getS3().getBucket().getArn());
+    assertEquals("example-bucket", record.getS3().getBucket().getName());
+
+    assertEquals("0123456789abcdef0123456789abcdef", record.getS3().getObject().geteTag());
+    assertEquals("b53c92cf-f7b9-4787-9541-76574ec70d71", record.getS3().getObject().getKey());
+    assertEquals("0A1B2C3D4E5F678901", record.getS3().getObject().getSequencer());
+    assertNull(record.getS3().getObject().getVersionId());
+    assertEquals("0A1B2C3D4E5F678901", record.getS3().getObject().getSequencer());
+
+    assertEquals("1.0", record.getS3().getS3SchemaVersion());
+  }
+
+  /**
+   * Test invoke Lambda with {@link SqsEvent}.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testSqsEvent01() throws Exception {
+    // given
+    String payload = loadContent("/SqsEvent/event01.json");
+
+    Gson gson = LambdaRuntime.buildJsonProvider();
+
+    // when
+    SQSEvent event = (SQSEvent) LambdaRuntime.convertToObject(gson, payload, SQSEvent.class);
+
+    // then
+    assertEquals(1, event.getRecords().size());
+
+    SQSMessage record = event.getRecords().get(0);
+    assertEquals(
+        "{ApproximateReceiveCount=1, SentTimestamp=1655525998108, "
+            + "SenderId=AIDAJQR6QDGQ7PATMSYEY, "
+            + "ApproximateFirstReceiveTimestamp=1655525998113}",
+        record.getAttributes().toString());
+    assertEquals("us-east-2", record.getAwsRegion());
+    assertNotNull(record.getBody());
+    assertEquals("aws:sqs", record.getEventSource());
+    assertEquals(
+        "arn:aws:sqs:us-east-2:111111111111:test-QtDaIStrYbFb", record.getEventSourceArn());
+    assertEquals("18825a1dbc4503da7bb93b2b6585d704", record.getMd5OfBody());
+    assertNull(record.getMd5OfMessageAttributes());
+    assertEquals("{}", record.getMessageAttributes().toString());
+    assertEquals("a781b6d9-6eff-4526-92a2-bb1b587e2cde", record.getMessageId());
+    assertNotNull(record.getReceiptHandle());
+  }
+
+  private String loadContent(final String filename) throws IOException {
+    try (InputStream is = getClass().getResourceAsStream(filename)) {
+      return IOUtils.toString(is, StandardCharsets.UTF_8);
+    }
   }
 }
