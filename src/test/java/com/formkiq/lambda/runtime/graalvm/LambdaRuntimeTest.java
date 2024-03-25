@@ -135,7 +135,7 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    assertEquals("test data result", invocationResponseHandler.getResponse());
   }
 
   /**
@@ -191,7 +191,7 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    String expected = "SUCCESS";
+    String expected = "";
     assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
@@ -209,7 +209,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "this is a test string";
+    assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
   /**
@@ -226,7 +227,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "98";
+    assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
   /**
@@ -243,7 +245,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "{\"test\":\"123\"}";
+    assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
   /**
@@ -262,7 +265,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "this is a test string";
+    assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
   /**
@@ -280,7 +284,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "this is a run string";
+    assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
   /**
@@ -305,7 +310,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.main(new String[] {});
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "this is a run string";
+    assertEquals(expected, invocationResponseHandler.getResponse());
   }
 
   /**
@@ -324,7 +330,8 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("SUCCESS", invocationResponseHandler.getResponse());
+    String expected = "{\"body\":\"this is some data\"}";
+    assertEquals(expected, invocationResponseHandler.getResponse());
     assertNotNull(System.getProperty("com.amazonaws.xray.traceHeader"));
   }
 

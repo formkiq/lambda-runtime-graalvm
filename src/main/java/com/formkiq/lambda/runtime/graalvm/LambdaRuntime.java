@@ -223,7 +223,7 @@ public class LambdaRuntime {
           String invocationUrl =
               MessageFormat.format(
                   LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
-          HttpClient.post(invocationUrl, "SUCCESS");
+          HttpClient.post(invocationUrl, result);
 
         } else {
 
