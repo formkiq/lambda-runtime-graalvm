@@ -126,8 +126,8 @@ publishing {
 		    username project.repoUser
 		    password project.repoPassword
 		  }
-		  url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-		  //url "https://oss.sonatype.org/content/repositories/snapshots/"
+//		  url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+		  url "https://oss.sonatype.org/content/repositories/snapshots/"
 		}
 	}
 }
