@@ -8,7 +8,6 @@
 name: Sonatype Publish
 
 on:
-  push:
   workflow_dispatch:
 
 permissions:
