@@ -461,7 +461,7 @@ public class LambdaRuntimeTest {
   @Test
   public void testSqsEvent01() throws Exception {
     // given
-    String payload = loadContent("/SqsEvent/event01.json");
+    String payload = loadContent("/SQSEvent/event01.json");
 
     Gson gson = LambdaRuntime.buildJsonProvider();
 
