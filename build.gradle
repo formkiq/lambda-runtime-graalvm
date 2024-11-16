@@ -10,7 +10,7 @@ plugins {
 }
 
 group 'com.formkiq'
-version '2.5.0'
+version '2.5.1-SNAPSHOT'
 
 spotbugs {
   excludeFilter = file("$rootDir/config/spotbugs/spotbugs-exclude.xml")
@@ -31,7 +31,7 @@ spotbugsMain {
 } 
 
 checkstyle {
-	toolVersion '8.29'
+    toolVersion = '10.12.1'
 	configFile file("config/checkstyle/checkstyle.xml")
 	configProperties = [project_loc: "${projectDir}"]
     ignoreFailures = false
@@ -41,7 +41,11 @@ checkstyle {
 checkstyleMain.dependsOn spotlessApply
 
 repositories {
-    jcenter()
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url "https://oss.sonatype.org/content/repositories/snapshots/"
+  }
 }
 
 check {
@@ -77,8 +81,9 @@ afterEvaluate {
 
 dependencies {
 	implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.3'
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
-	implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.11.4'
+    implementation group: 'com.formkiq.code.gson', name: 'gson', version: '2.11.1-SNAPSHOT'
+    implementation group: 'joda-time', name: 'joda-time', version: '2.13.0'
+    testImplementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.11.4'
     testImplementation group: 'junit', name: 'junit', version:'4.+'
     testImplementation group: 'org.mock-server', name: 'mockserver-netty', version: '5.15.0'
     testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.9'

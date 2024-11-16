@@ -10,7 +10,8 @@
 		<allow pkg="com.amazonaws.services.lambda.runtime" />
 		<allow pkg="com.google.gson" />
 		<allow pkg="com.sun.net.httpserver" />
-		
+
+		<allow pkg="org.joda.time" />
 		<allow pkg="java.io" />
 		<allow pkg="java.lang.reflect" />
 		<allow pkg="java.net" />

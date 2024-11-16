@@ -15,8 +15,6 @@ package com.formkiq.lambda.runtime.graalvm;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.ByteArrayInputStream;
@@ -28,15 +26,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import org.joda.time.DateTime;
 
 /** Wrapper for the AWS Lambda Runtime. */
 public class LambdaRuntime {
@@ -254,7 +250,7 @@ public class LambdaRuntime {
       final Object handler, final String methodName, final Context context, final String payload)
       throws Exception {
 
-    String value = null;
+    String value;
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     if (methodName != null) {
@@ -286,7 +282,7 @@ public class LambdaRuntime {
    * @throws IllegalAccessException IllegalAccessException
    * @throws ClassNotFoundException ClassNotFoundException
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("rawtypes")
   private static String invokeMethod(
       final Object object, final String methodName, final String payload, final Context context)
       throws IllegalAccessException,
@@ -301,7 +297,7 @@ public class LambdaRuntime {
     Gson gson = buildJsonProvider();
     Object input = convertToObject(gson, payload, parameterType);
 
-    Object value = null;
+    Object value;
     if (methodName == null && object instanceof RequestHandler) {
       value = ((RequestHandler) object).handleRequest(input, context);
     } else {
@@ -330,19 +326,8 @@ public class LambdaRuntime {
   static Gson buildJsonProvider() {
     return new GsonBuilder()
         .setFieldNamingStrategy(new AwsEventsFieldNamingStrategy())
-        .setExclusionStrategies(
-            new ExclusionStrategy() {
-              @Override
-              public boolean shouldSkipField(final FieldAttributes f) {
-                return false;
-              }
-
-              @Override
-              public boolean shouldSkipClass(final Class<?> clazz) {
-                Collection<Class<?>> list = Arrays.asList(ByteBuffer.class);
-                return list.contains(clazz);
-              }
-            })
+        .registerTypeAdapter(DateTime.class, new DateTimeConverter())
+        .setExclusionStrategies(new AwsEventsExclusionStrategy())
         .create();
   }
 
@@ -362,8 +347,7 @@ public class LambdaRuntime {
     if (Object.class.equals(parameterType)) {
 
       Type[] types = object.getClass().getGenericInterfaces();
-      if (types.length > 0 && types[0] instanceof ParameterizedType) {
-        ParameterizedType p = (ParameterizedType) types[0];
+      if (types.length > 0 && types[0] instanceof ParameterizedType p) {
         if (p.getActualTypeArguments().length > 0) {
           String typeName = p.getActualTypeArguments()[0].getTypeName();
           if (typeName.startsWith("java.util.Map")) {
@@ -398,7 +382,7 @@ public class LambdaRuntime {
     InputStream input = new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
     handler.handleRequest(input, output, context);
 
-    return new String(output.toByteArray(), StandardCharsets.UTF_8);
+    return output.toString(StandardCharsets.UTF_8);
   }
 
   /**
