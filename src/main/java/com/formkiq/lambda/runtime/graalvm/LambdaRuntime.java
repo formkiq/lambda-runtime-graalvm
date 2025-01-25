@@ -211,6 +211,8 @@ public class LambdaRuntime {
 
         context = new LambdaContext(requestId);
         eventBody = event.getBody();
+      } else {
+        context = new LambdaContext(requestId);
       }
 
       try {
