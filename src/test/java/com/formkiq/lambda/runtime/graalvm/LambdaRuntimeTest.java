@@ -12,11 +12,11 @@
  */
 package com.formkiq.lambda.runtime.graalvm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
 
@@ -37,10 +37,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 
@@ -67,7 +67,7 @@ public class LambdaRuntimeTest {
   private static final InvocationNextHandler INVOCATION_NEXT_HANDLER = new InvocationNextHandler();
 
   /** before class. */
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() {
 
     mockServer = startClientAndServer(SERVER_PORT);
@@ -81,7 +81,7 @@ public class LambdaRuntimeTest {
   }
 
   /** After Class. */
-  @AfterClass
+  @AfterAll
   public static void stopServer() {
     mockServer.stop();
   }
@@ -113,7 +113,7 @@ public class LambdaRuntimeTest {
   }
 
   /** before. */
-  @Before
+  @BeforeEach
   public void before() {
     INVOCATION_NEXT_HANDLER.setResponseContent("test");
   }
