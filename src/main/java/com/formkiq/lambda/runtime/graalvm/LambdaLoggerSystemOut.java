@@ -47,6 +47,12 @@ public class LambdaLoggerSystemOut implements LambdaLogger {
     return "JSON".equals(System.getenv("AWS_LAMBDA_LOG_FORMAT"));
   }
 
+  /**
+   * Convert {@link Exception} to {@link String}.
+   *
+   * @param ex {@link Exception}
+   * @return String
+   */
   public static String toString(final Exception ex) {
     StringWriter sw = new StringWriter();
     try (PrintWriter pw = new PrintWriter(sw)) {
