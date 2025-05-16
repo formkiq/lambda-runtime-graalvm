@@ -89,7 +89,7 @@ public class LambdaRuntime {
   public static void handleInitError(
       final Map<String, String> env, final Exception ex, final Context context) throws IOException {
 
-    ex.printStackTrace();
+    context.getLogger().log(LambdaLoggerSystemOut.toString(ex));
 
     String runtimeApi = env.get("AWS_LAMBDA_RUNTIME_API");
 
@@ -117,7 +117,8 @@ public class LambdaRuntime {
       final String requestId,
       final Exception ex,
       final Context context) {
-    ex.printStackTrace();
+
+    context.getLogger().log(LambdaLoggerSystemOut.toString(ex));
 
     String runtimeApi = env.get("AWS_LAMBDA_RUNTIME_API");
 
@@ -132,7 +133,7 @@ public class LambdaRuntime {
       try {
         HttpClient.post(initErrorUrl, error);
       } catch (IOException e) {
-        e.printStackTrace();
+        context.getLogger().log(LambdaLoggerSystemOut.toString(e));
       }
     }
   }
@@ -192,9 +193,9 @@ public class LambdaRuntime {
     while (true) {
 
       // Get next Lambda Event
-      Context context = null;
       String eventBody = null;
       String requestId = UUID.randomUUID().toString();
+      Context context = new LambdaContext(requestId);
 
       if (runtimeUrl != null) {
         HttpResponse event = HttpClient.get(runtimeUrl);
@@ -205,7 +206,6 @@ public class LambdaRuntime {
           System.setProperty("com.amazonaws.xray.traceHeader", xamazTraceId);
         }
 
-        context = new LambdaContext(requestId);
         eventBody = event.getBody();
       }
 

@@ -13,14 +13,24 @@
 package com.formkiq.lambda.runtime.graalvm;
 
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Map;
 
 /** Implementation of {@link LambdaLogger}. */
 public class LambdaLoggerSystemOut implements LambdaLogger {
 
   @Override
   public void log(final String message) {
-    System.out.println(message);
+    if (isJsonFormat()) {
+      Gson gson = new GsonBuilder().create();
+      System.out.println(gson.toJson(Map.of("level", "ERROR", "message", message)));
+    } else {
+      System.out.println(message);
+    }
     System.out.flush();
   }
 
@@ -30,7 +40,18 @@ public class LambdaLoggerSystemOut implements LambdaLogger {
       System.out.write(message);
     } catch (IOException e) {
       // NOTE: When actually running on AWS Lambda, an IOException would never happen
-      e.printStackTrace();
     }
+  }
+
+  private boolean isJsonFormat() {
+    return "JSON".equals(System.getenv("AWS_LAMBDA_LOG_FORMAT"));
+  }
+
+  public static String toString(final Exception ex) {
+    StringWriter sw = new StringWriter();
+    try (PrintWriter pw = new PrintWriter(sw)) {
+      ex.printStackTrace(pw);
+    }
+    return sw.toString();
   }
 }
