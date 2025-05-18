@@ -1,9 +1,9 @@
+import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     id 'java'
-    id 'maven-publish'
-    id 'signing'
     id 'checkstyle'
+    id 'com.vanniktech.maven.publish' version '0.32.0'
     id 'com.diffplug.spotless' version '7.0.3'
     id 'com.github.spotbugs'  version '6.1.11'
     id 'com.github.ben-manes.versions' version '0.52.0'
@@ -23,12 +23,12 @@ spotless {
 }
 
 spotbugsMain {
-  reports {
-    html {
-      enabled = true
+    reports {
+        html {
+            required.set(true)
+        }
     }
-  }
-} 
+}
 
 checkstyle {
     toolVersion = '10.12.1'
@@ -43,41 +43,13 @@ checkstyleMain.dependsOn spotlessApply
 repositories {
   mavenLocal()
   mavenCentral()
-  maven {
-    url "https://oss.sonatype.org/content/repositories/snapshots/"
-  }
-}
-
-check {
-	  dependsOn(tasks.publishToMavenLocal)
 }
 
 java {
-    withJavadocJar()
-    withSourcesJar()
-    
 	toolchain {
 		languageVersion.set(JavaLanguageVersion.of(17))
 	}
 }
-
-javadoc {
-    if(JavaVersion.current().isJava9Compatible()) {
-        options.addBooleanOption('html5', true)
-    }
-}
-
-artifacts {
-    archives jar
-	
-    archives javadocJar
-    archives sourcesJar
-}
-
-afterEvaluate {
-	   tasks.getByName('spotlessCheck').dependsOn(tasks.getByName('spotlessApply'))
-}
-
 
 dependencies {
 	implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.3'
@@ -90,56 +62,38 @@ dependencies {
     testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.17'
 }
 
-publishing {
-	publications {
-	    mavenJava(MavenPublication) {
-	    	artifactId = 'lambda-runtime-graalvm'
-	        from components.java
-	        
-	        pom {
-                name = 'FormKiQ Lambda Runtime Graalvm'
-                description = 'Lambda Runtime Graalvm'
-                url = 'https://github.com/formkiq/lambda-runtime-graalvm'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'mfriesen'
-                        name = 'Mike Friesen'
-                        email = 'mike@formkiq.com'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/formkiq/lambda-runtime-graalvm.git'
-                    developerConnection = 'scm:git:ssh://github.com/formkiq/lambda-runtime-graalvm.git'
-                    url = 'https://github.com/formkiq/lambda-runtime-graalvm.git'
-                }
+mavenPublishing {
+
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    pom {
+        name = "FormKiQ Lambda Runtime Graalvm"
+        description = "Lambda Runtime Graalvm"
+        inceptionYear = "2020"
+        url = "https://github.com/formkiq/lambda-runtime-graalvm"
+        licenses {
+            license {
+                name = "The Apache License, Version 2.0"
+                url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
             }
-	    }
-	}
-	repositories {
-		maven {
-		  credentials {
-		    username project.repoUser
-		    password project.repoPassword
-		  }
-//		  url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-		  url "https://oss.sonatype.org/content/repositories/snapshots/"
-		}
-	}
+        }
+        developers {
+            developer {
+                id = 'mfriesen'
+                name = 'Mike Friesen'
+            }
+        }
+        scm {
+            url = 'https://github.com/formkiq/lambda-runtime-graalvm.git'
+            connection = 'scm:git:git://github.com/formkiq/lambda-runtime-graalvm.git'
+            developerConnection = 'scm:git:ssh://github.com/formkiq/lambda-runtime-graalvm.git'
+        }
+    }
 }
 
-signing {
-    sign publishing.publications.mavenJava
-}
-
-check {
-    dependsOn(tasks.publishToMavenLocal)
-}
+compileJava.dependsOn(tasks.spotlessApply)
+check.dependsOn(tasks.publishToMavenLocal)
 
 test {
     failFast = true
