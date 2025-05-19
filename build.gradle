@@ -10,7 +10,7 @@ plugins {
 }
 
 group 'com.formkiq'
-version '2.6.0-SNAPSHOT'
+version '2.6.0'
 
 spotbugs {
   excludeFilter = file("$rootDir/config/spotbugs/spotbugs-exclude.xml")
