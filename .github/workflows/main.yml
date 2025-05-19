@@ -27,6 +27,21 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: gradle
+    - name: Restore gradle.properties
+      env:
+        GRADLE_PROPERTIES: ${{ secrets.GRADLE_PROPERTIES }}
+      shell: bash
+      run: |
+        mkdir -p ~/.gradle/
+        echo "GRADLE_USER_HOME=${HOME}/.gradle" >> $GITHUB_ENV
+        echo "${GRADLE_PROPERTIES}" > ~/.gradle/gradle.properties
+    - name: Restore gpg key
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      shell: bash
+      run: |
+        mkdir /home/runner/.gnupg
+        echo -n "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode > /home/runner/.gnupg/secring.gpg
     - name: Execute Gradle build
       run: ./gradlew clean build --refresh-dependencies --info
     - name: Upload test reports

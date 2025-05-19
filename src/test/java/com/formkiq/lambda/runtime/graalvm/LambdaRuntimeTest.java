@@ -12,16 +12,18 @@
  */
 package com.formkiq.lambda.runtime.graalvm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.IamPolicyResponseV1;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -31,13 +33,14 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 
@@ -57,32 +60,28 @@ public class LambdaRuntimeTest {
   private static ClientAndServer mockServer;
 
   /** {@link InvocationResponseHandler}. */
-  private static InvocationResponseHandler invocationResponseHandler =
+  private static final InvocationResponseHandler INVOCATION_RESPONSE_HANDLER =
       new InvocationResponseHandler();
 
   /** {@link InvocationNextHandler}. */
-  private static InvocationNextHandler invocationNextHandler = new InvocationNextHandler();
+  private static final InvocationNextHandler INVOCATION_NEXT_HANDLER = new InvocationNextHandler();
 
-  /**
-   * before class.
-   *
-   * @throws Exception Exception
-   */
-  @BeforeClass
-  public static void beforeClass() throws Exception {
+  /** before class. */
+  @BeforeAll
+  public static void beforeClass() {
 
-    mockServer = startClientAndServer(Integer.valueOf(SERVER_PORT));
+    mockServer = startClientAndServer(SERVER_PORT);
 
-    add("GET", "/2018-06-01/runtime/invocation/next", invocationNextHandler);
+    add("GET", "/2018-06-01/runtime/invocation/next", INVOCATION_NEXT_HANDLER);
     add(
         "POST",
         "/2018-06-01/runtime/invocation/" + REQUEST_ID + "/response",
-        invocationResponseHandler);
-    add("POST", "/2018-06-01/runtime/init/error", invocationResponseHandler);
+        INVOCATION_RESPONSE_HANDLER);
+    add("POST", "/2018-06-01/runtime/init/error", INVOCATION_RESPONSE_HANDLER);
   }
 
   /** After Class. */
-  @AfterClass
+  @AfterAll
   public static void stopServer() {
     mockServer.stop();
   }
@@ -93,11 +92,9 @@ public class LambdaRuntimeTest {
    * @param method {@link String}
    * @param path {@link String}
    * @param response {@link ExpectationResponseCallback}
-   * @throws IOException IOException
    */
   private static void add(
-      final String method, final String path, final ExpectationResponseCallback response)
-      throws IOException {
+      final String method, final String path, final ExpectationResponseCallback response) {
     mockServer.when(request().withMethod(method).withPath(path)).respond(response);
   }
 
@@ -116,9 +113,9 @@ public class LambdaRuntimeTest {
   }
 
   /** before. */
-  @Before
+  @BeforeEach
   public void before() {
-    invocationNextHandler.setResponseContent("test");
+    INVOCATION_NEXT_HANDLER.setResponseContent("test");
   }
 
   /**
@@ -135,7 +132,7 @@ public class LambdaRuntimeTest {
     LambdaRuntime.invoke(env);
 
     // then
-    assertEquals("test data result", invocationResponseHandler.getResponse());
+    assertEquals("test data result", INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -154,7 +151,7 @@ public class LambdaRuntimeTest {
     // then
     String expected =
         "{\"errorMessage\":\"Could not find handler method\",\"errorType\":\"InitError\"}";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -173,7 +170,7 @@ public class LambdaRuntimeTest {
     // then
     String expected =
         "{\"errorMessage\":\"Could not find handler method\",\"errorType\":\"InitError\"}";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -184,7 +181,7 @@ public class LambdaRuntimeTest {
   @Test
   public void testInvoke04() throws Exception {
     // given
-    invocationNextHandler.setResponseContent("{\"data\":\"test\"}");
+    INVOCATION_NEXT_HANDLER.setResponseContent("{\"data\":\"test\"}");
     Map<String, String> env = createEnv(TestRequestInputMapVoidHandler.class.getName());
 
     // when
@@ -192,7 +189,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -210,7 +207,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "this is a test string";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -228,7 +225,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "98";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -246,7 +243,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "{\"test\":\"123\"}";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -266,7 +263,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "this is a test string";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -285,7 +282,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "this is a run string";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -311,7 +308,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "this is a run string";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
   }
 
   /**
@@ -323,7 +320,7 @@ public class LambdaRuntimeTest {
   @Test
   public void testInvoke11() throws Exception {
     // given
-    invocationNextHandler.setResponseContent("{\"body\":\"this is some data\"}");
+    INVOCATION_NEXT_HANDLER.setResponseContent("{\"body\":\"this is some data\"}");
     Map<String, String> env = createEnv(TestRequestApiGatewayProxyHandler.class.getName());
 
     // when
@@ -331,7 +328,7 @@ public class LambdaRuntimeTest {
 
     // then
     String expected = "{\"body\":\"this is some data\"}";
-    assertEquals(expected, invocationResponseHandler.getResponse());
+    assertEquals(expected, INVOCATION_RESPONSE_HANDLER.getResponse());
     assertNotNull(System.getProperty("com.amazonaws.xray.traceHeader"));
   }
 
@@ -359,7 +356,7 @@ public class LambdaRuntimeTest {
 
     final int expected = 18;
     assertEquals(expected, event.getMultiValueHeaders().size());
-    assertFalse(event.getIsBase64Encoded().booleanValue());
+    assertFalse(event.getIsBase64Encoded());
   }
 
   /**
@@ -434,7 +431,7 @@ public class LambdaRuntimeTest {
     assertEquals("us-east-1", record.getAwsRegion());
     assertEquals("ObjectCreated:Put", record.getEventName());
     assertEquals("aws:s3", record.getEventSource());
-    assertNull(record.getEventTime());
+    assertNotNull(record.getEventTime());
     assertEquals("2.0", record.getEventVersion());
     assertEquals("EXAMPLE", record.getUserIdentity().getPrincipalId());
 
@@ -457,14 +454,14 @@ public class LambdaRuntimeTest {
   }
 
   /**
-   * Test invoke Lambda with {@link SqsEvent}.
+   * Test invoke Lambda with SqsEvent.
    *
    * @throws Exception Exception
    */
   @Test
   public void testSqsEvent01() throws Exception {
     // given
-    String payload = loadContent("/SqsEvent/event01.json");
+    String payload = loadContent("/SQSEvent/event01.json");
 
     Gson gson = LambdaRuntime.buildJsonProvider();
 
@@ -492,8 +489,58 @@ public class LambdaRuntimeTest {
     assertNotNull(record.getReceiptHandle());
   }
 
+  /**
+   * Test invoke Lambda with {@link
+   * com.amazonaws.services.lambda.runtime.events.IamPolicyResponseV1}.
+   *
+   * @throws Exception Exception
+   */
+  @Test
+  public void testIamPolicyResponseV1Event01() throws Exception {
+    // given
+    String payload = loadContent("/IamPolicy/event01.json");
+
+    Gson gson = LambdaRuntime.buildJsonProvider();
+
+    // when
+    IamPolicyResponseV1 event =
+        (IamPolicyResponseV1)
+            LambdaRuntime.convertToObject(gson, payload, IamPolicyResponseV1.class);
+
+    // then
+    assertEquals("user-12345", event.getPrincipalId());
+    assertEquals("unique-usage-key-001", event.getUsageIdentifierKey());
+
+    Map<String, Object> policyDocument = event.getPolicyDocument();
+    assertNotNull(policyDocument);
+    assertEquals(2, policyDocument.size());
+
+    assertEquals("2012-10-17", policyDocument.get("Version"));
+
+    Map<String, Object>[] statementMap = (Map<String, Object>[]) policyDocument.get("Statement");
+    assertEquals(1, statementMap.length);
+    Map<String, Object> statement = statementMap[0];
+    final int expect4 = 4;
+    assertEquals(expect4, statement.size());
+    assertNull(statement.get("Condition"));
+    assertEquals("execute-api:Invoke", statement.get("Action"));
+    assertEquals(
+        "arn:aws:execute-api:region:account-id:api-id/stage/method/resource-path",
+        String.join(",", Arrays.asList((String[]) statement.get("Resource"))));
+    assertEquals("Allow", statement.get("Effect"));
+
+    Map<String, Object> context = event.getContext();
+    assertNotNull(context);
+    final int expect3 = 3;
+    assertEquals(expect3, context.size());
+    assertEquals("stringValue", context.get("stringKey"));
+    assertEquals("2.0", String.valueOf(context.get("numberKey")));
+    assertTrue((Boolean) context.get("booleanKey"));
+  }
+
   private String loadContent(final String filename) throws IOException {
     try (InputStream is = getClass().getResourceAsStream(filename)) {
+      assertNotNull(is);
       return IOUtils.toString(is, StandardCharsets.UTF_8);
     }
   }

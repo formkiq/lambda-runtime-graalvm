@@ -1,76 +1,61 @@
 package com.formkiq.lambda.runtime.graalvm;
 
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.FieldNamingStrategy;
 import java.lang.reflect.Field;
-import java.util.Map;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
 
 /** AWS Events Field {@link FieldNamingStrategy}. */
 public class AwsEventsFieldNamingStrategy implements FieldNamingStrategy {
 
-  /** {@link DynamodbEvent} Field Mapping. */
-  private static final Map<Class<?>, Map<String, String>> FIELD_MAPPING =
-      Map.of(
-          DynamodbEvent.class,
-          Map.of("records", "Records"),
-          StreamRecord.class,
-          Map.of(
-              "newImage",
-              "NewImage",
-              "oldImage",
-              "OldImage",
-              "keys",
-              "Keys",
-              "sequenceNumber",
-              "SequenceNumber",
-              "sizeBytes",
-              "SizeBytes",
-              "streamViewType",
-              "StreamViewType"),
-          AttributeValue.class,
-          Map.of(
-              "s",
-              "S",
-              "n",
-              "N",
-              "sS",
-              "SS",
-              "nS",
-              "NS",
-              "m",
-              "M",
-              "l",
-              "L",
-              "nULLValue",
-              "NULLValue",
-              "bOOL",
-              "BOOL"),
-          S3EventNotification.class,
-          Map.of("records", "Records"),
-          S3EventNotification.S3EventNotificationRecord.class,
-          Map.of("eventTime", "EventTime"),
-          S3EventNotification.ResponseElementsEntity.class,
-          Map.of("xAmzId2", "x-amz-id-2", "xAmzRequestId", "x-amz-request-id"),
-          SQSEvent.class,
-          Map.of("records", "Records"),
-          SQSEvent.SQSMessage.class,
-          Map.of("eventSourceArn", "eventSourceARN"));
+  @Override
+  public String translateName(final Field f) {
+    return f.getName();
+  }
 
   @Override
-  public String translateName(final Field field) {
+  public List<String> alternateNames(final Field field) {
+    String fieldName = translateName(field);
 
-    String fieldName = field.getName();
+    return Stream.of(
+            FieldNamingPolicy.UPPER_CAMEL_CASE.translateName(field),
+            separateCamelCaseIncludeDigit(fieldName, '-').toLowerCase(Locale.ENGLISH),
+            convertUpperCaseSuffix(fieldName, "Arn"),
+            fieldName.toLowerCase(),
+            fieldName.toUpperCase())
+        .filter(s -> !s.isBlank() && !s.equals(fieldName))
+        .distinct()
+        .toList();
+  }
 
-    Map<String, String> fields = FIELD_MAPPING.get(field.getDeclaringClass());
-
-    if (fields != null && fields.containsKey(fieldName)) {
-      fieldName = fields.get(fieldName);
+  static String convertUpperCaseSuffix(final String input, final String ext) {
+    String s = "";
+    if (input.endsWith(ext)) {
+      s = input.substring(0, input.length() - ext.length()) + ext.toUpperCase();
     }
+    return s;
+  }
 
-    return fieldName;
+  /**
+   * Converts the field name that uses camel-case define word separation into separate words that
+   * are separated by the provided {@code separator}.
+   *
+   * @param name {@link String}
+   * @param separator char
+   * @return String
+   */
+  static String separateCamelCaseIncludeDigit(final String name, final char separator) {
+    StringBuilder translation = new StringBuilder();
+    for (int i = 0, length = name.length(); i < length; i++) {
+      char character = name.charAt(i);
+      if ((Character.isUpperCase(character) || Character.isDigit(character))
+          && !translation.isEmpty()) {
+        translation.append(separator);
+      }
+      translation.append(character);
+    }
+    return translation.toString();
   }
 }

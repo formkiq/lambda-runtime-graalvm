@@ -1,0 +1,19 @@
+{
+  "principalId": "user-12345",
+  "policyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "execute-api:Invoke",
+        "Resource": ["arn:aws:execute-api:region:account-id:api-id/stage/method/resource-path"]
+      }
+    ]
+  },
+  "context": {
+    "stringKey": "stringValue",
+    "numberKey": 2,
+    "booleanKey": true
+  },
+  "usageIdentifierKey": "unique-usage-key-001"
+}
