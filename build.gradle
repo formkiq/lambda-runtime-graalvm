@@ -65,6 +65,7 @@ dependencies {
 mavenPublishing {
 
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 
     pom {
         name = "FormKiQ Lambda Runtime Graalvm"
